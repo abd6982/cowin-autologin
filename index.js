@@ -1,15 +1,24 @@
 const path = require('path');
 const puppeteer = require('puppeteer');
+const readline = require('readline');
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-const conversationThreadId = '123';
-const beneficiaryNumber = 1;
-const phoneNumber = '9999999999';
+let conversationThreadId = '';
+let beneficiaryName = '';
+let phoneNumber = '';
 
 let browser = null;
 let page = null;
 let messagePage = null;
 
 const setup = async () => {
+  // Ask user the required information
+  phoneNumber = await new Promise(resolve => rl.question('Enter your phone number: ', resolve));
+  beneficiaryName = await new Promise(resolve => rl.question('Enter beneficiary name: ', resolve));
+  conversationThreadId = await new Promise(resolve => rl.question('Enter messages conversation thread id: ', resolve));
   // Support for pkg
   // https://github.com/vercel/pkg/issues/204#issuecomment-536323464
   const executablePath =
@@ -142,9 +151,18 @@ const login = async (logout=false) => {
   await page.waitForTimeout(1000);
 
   // select the desired beneficiary
-  await page.evaluate((beneficiaryNumber) => {
-    document.getElementsByClassName('m-lablename')[beneficiaryNumber-1].click();
-  }, beneficiaryNumber);
+  await page.evaluate((beneficiaryName) => {
+    const beneficiaries = document.getElementsByClassName('sepreetor ng-star-inserted md hydrated');
+    for (let i = 0; i < beneficiaries.length; i += 1) {
+      if (beneficiaries[i].firstElementChild.firstElementChild.firstElementChild.firstElementChild.lastElementChild.firstElementChild.lastElementChild.innerText.split('\n')[0] === beneficiaryName) {
+        const buttons = beneficiaries[i].getElementsByClassName('m-lablename');
+        if (buttons.length === 1) buttons[0].click();
+        else buttons[1].click();
+        break;
+      }
+    }
+    // document.getElementsByClassName('m-lablename')[beneficiaryName-1].click();
+  }, beneficiaryName);
   await page.waitForTimeout(1000);
 
   // switch to Search by District
